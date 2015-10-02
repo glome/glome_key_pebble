@@ -1,0 +1,49 @@
+{
+  "uuid": "9ffcce3a-1f16-4d0c-82c6-e5cdbd998eba",
+  "shortName": "Glome Key",
+  "longName": "Glome Key for Pebble",
+  "companyName": "Glome Oy",
+  "versionCode": 1,
+  "versionLabel": "0.1",
+  "capabilities": [
+    "configurable"
+  ],
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "SA_KEY": 0,
+    "SYNC_CODE_KEY": 1,
+    "STATUS_KEY": 2
+  },
+  "resources": {
+    "media": [
+      {
+        "menuIcon": true,
+        "type": "png",
+        "name": "IMAGE_MENU_ICON",
+        "file": "images/menu_icon.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_LOGO_SPLASH",
+        "file": "images/logo_splash.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_TILE_SPLASH",
+        "file": "images/tile_splash.png"
+      },
+      {
+        "type": "font",
+        "name": "MONO_FONT_14",
+        "file": "fonts/UbuntuMono-Regular.ttf"
+      }
+    ]
+  },
+  "targetPlatforms": [
+    "aplite",
+    "basalt"
+  ],
+  "sdkVersion": "3"
+}
