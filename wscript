@@ -8,6 +8,10 @@ top = '.'
 out = 'build'
 main_js_file = 'glome_key_main'
 
+APPINFO_PATH = "appinfo.json"
+JS_CONFIG_PATH = "src/js/config.json"
+COMMANDS_CONFIG_PATH = "src/js/commands.json"
+
 def options(ctx):
     ctx.load('pebble_sdk')
 
@@ -77,8 +81,8 @@ def build_platform(ctx, platform=None, binaries=None):
 
 @conf
 def concat_javascript(ctx, js_path=None):
-    js_nodes = (ctx.path.ant_glob(js_path + '/**/*.js') +
-                ctx.path.ant_glob(js_path + '/**/*.json') +
+    js_nodes = (ctx.path.ant_glob(js_path + '/**/*.json') +
+                ctx.path.ant_glob(js_path + '/**/*.js') +
                 ctx.path.ant_glob(js_path + '/**/*.coffee'))
 
     if not js_nodes:
@@ -89,7 +93,6 @@ def concat_javascript(ctx, js_path=None):
         LOADER_TEMPLATE = ("__loader.define({relpath}, {lineno}, " +
                            "function(exports, module, require) {{\n{body}\n}});")
         JSON_TEMPLATE = "module.exports = {body};"
-        APPINFO_PATH = "appinfo.json"
 
         def loader_translate(source, lineno):
             return LOADER_TEMPLATE.format(
@@ -132,6 +135,7 @@ def concat_javascript(ctx, js_path=None):
                 else:
                     sources.append({ 'relpath': relpath, 'body': body })
 
+        # load app info JSON
         with open(APPINFO_PATH, 'r') as f:
             body = JSON_TEMPLATE.format(body=f.read())
             sources.append({ 'relpath': APPINFO_PATH, 'body': body })

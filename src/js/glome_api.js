@@ -3,60 +3,65 @@
  * Glome HTTP REST API implementation
  *
  */
-var ajax = require('ajax');
 var util2 = require('util2');
-var Settings = require('settings');
+var myutil = require('myutil');
+var ajax = require('ajax');
 
 /**
  *
  */
-var GlomeAPI = function()
-{
-  this.config = {
-    // change if needed
-    'server': 'http://10.0.1.101:3000/',
-    'apikey': '85f3a11f14ffcd4f0e2091701a473792',
-    'uid': 'me.glome.p1'
-  };
-
-  this.defaults = {
-    // settings key for soft account
-    'SA_KEY': 'glome_sa',
-    // api entry points
-    'api_create_sa': 'users.json'
-  };
-
-  this.init();
-}
+var GlomeAPI = function() {};
 
 /**
+ * Prepare API urls
  *
+ * * substitutes {glomeid} with real soft account
+ * * prepends uri in config.json with server address
  */
-GlomeAPI.prototype.init = function()
+GlomeAPI.prototype.prepareApiUrl = function(uri)
 {
-  // load SA from storage
-  this.softAccount = this.getSoftAccountFromSettings();
-  console.log('this.softAccount = ' + this.softAccount);
+  var ret = uri;
 
-  // no SA yet
-  // line 243 in overall
-  if (! this.softAccount || typeof this.softAccount == 'undefined')
+  if (uri.indexOf('{glomeid}') > 0)
   {
-    console.log('No SA yet');
-    this.createSoftAccount();
+    if (this.glomeId !== null)
+    {
+      ret = uri.replace('{glomeid}', this.glomeId);
+    }
+    else
+    {
+      console.log('Cannot find valid glomeid to be used in the API request.')
+      return false;
+    }
   }
+
+  ret = this.config.server.concat(ret)
+
+  return ret;
+};
+
+/**
+ *
+ */
+GlomeAPI.prototype.init = function(config)
+{
+  this.config = config;
+  // Will be filled in as soon as there is a valid soft account
+  this.glomeId = null;
 
   return true;
 }
 
+
 /**
- *
+ * Prepare and send an API request;
+ * API implementations should all use this method
  */
 GlomeAPI.prototype.request = function (options, success, failure)
 {
   // prepend data payload with API credentials
   var credentials = {
-    'application' :
+    'application':
     {
       'apikey': this.config.apikey,
       'uid': this.config.uid
@@ -64,10 +69,18 @@ GlomeAPI.prototype.request = function (options, success, failure)
   };
 
   var data = util2.copy(options.data, credentials);
+  var url = this.prepareApiUrl(options.uri);
+
+  console.log('send request to url: ' + url);
+
+  if (url == false)
+  {
+    return url;
+  }
 
   var opts =
   {
-    url: this.config.server.concat(options.api_entry),
+    url: url,
     method: options.method,
     data: data,
     type: 'json',
@@ -79,89 +92,45 @@ GlomeAPI.prototype.request = function (options, success, failure)
 }
 
 /**
- *
+ * Our default AJAX failure callback
+ * Does nothing, but logs the error
  */
-GlomeAPI.prototype.getSoftAccountFromSettings = function()
+GlomeAPI.prototype.__failureCallback = function(error, status, request)
 {
-  var self = this;
-
-  if (! Settings || ! Settings.option(self.defaults.SA_SETTINGS_KEY))
-  {
-    console.log('No settings object or no SA saved to settings yet.');
-    return false;
-  }
-  console.log(0);
-  console.log('Send this: ' + Settings.option(self.defaults.SA_SETTINGS_KEY));
-  console.log(1);
-
-  this.sendMessage({'SA_KEY': Settings.option(self.defaults.SA_SETTINGS_KEY), 'STATUS_KEY': 111});
-
-  return Settings.option(self.defaults.SA_SETTINGS_KEY);
+  console.log('The ajax request failed: ' + status);
+  return status;
 }
 
 /**
- *
+ * Implements
+ * https://api.glome.me/apidocs/UsersController.html#method-i-create
  */
-GlomeAPI.prototype.saveSoftAccountToSettings = function(softAccount)
+GlomeAPI.prototype.createSoftAccount = function(options, success, failure)
 {
-  if (! Settings || ! softAccount)
-  {
-    console.log('No settings object or no SA to be saved to settings.');
-    return false;
-  }
-  Settings.option(this.defaults.SA_SETTINGS_KEY, softAccount);
-  console.log('Successfuly saved: ' + this.defaults.SA_SETTINGS_KEY + ' => ' + softAccount);
-
-  //this.sendAppMessage({'SA_KEY': Settings.option(this.defaults.SA_SETTINGS_KEY), 'SYNC_CODE_KEY': 1});
-
-  return Settings.option(this.defaults.SA_SETTINGS_KEY);
-}
-
-/**
- *
- */
-GlomeAPI.prototype.createSoftAccount = function()
-{
-  var self = this;
-  var options = {};
-
-  options.api_entry = this.defaults.api_create_sa;
-  options.method = 'POST';
-
-  success = function(data, status, request)
-  {
-    //var result = JSON.parse(body);
-    console.log('Created SoftAccount: ' + data.glomeid);
-    self.saveSoftAccountToSettings(data.glomeid);
+  var _options = util2.copy(this.config.api.createSoftAccount, options);
+  var _success = (typeof success !== 'undefined') ? success : function(data, status, request) {
+    // data.glomeid is the actual soft account
     return data.glomeid;
-  },
-  failure = function(error, status, request)
-  {
-    console.log('The ajax request failed: ' + status);
-    return status;
-  }
+  };
+  var _failure = (typeof failure !== 'undefined') ? failure : this.__failureCallback;
 
-  return this.request(options, success, failure);
+  return this.request(_options, _success, _failure);
 }
 
-GlomeAPI.prototype.sendMessage = function(msg)
+/**
+ * Implements
+ * https://api.glome.me/apidocs/SynchronizationsController.html#method-i-create
+ */
+GlomeAPI.prototype.createCode = function(options, success, failure)
 {
-  // send a message, so that we can catch the message / event
-  // and react to it in app.js
-  console.log('Have to send this: ' + JSON.stringify(msg));
-  var transactionId = Pebble.sendAppMessage(msg);
-    //~ function(e) {
-      //~ console.log('Successfully delivered message with transactionId ='
-        //~ + e.data.transactionId);
-    //~ },
-    //~ function(e) {
-      //~ console.log('Unable to deliver message with transactionId ='
-        //~ + e.data.transactionId
-        //~ + ' Error is: ' + e.error.message);
-    //~ }
-  //~ );
+  var _options = util2.copy(this.config.api.createCode, options);
+  var _success = (typeof success !== 'undefined') ? success : function(data, status, request) {
+    console.log('Created code: ' + data.code);
+    return data.code;
+  };
+  var _failure = (typeof failure !== 'undefined') ? failure : this.__failureCallback;
 
-  return transactionId;
+  return this.request(_options, _success, _failure);
 }
 
 module.exports = GlomeAPI;

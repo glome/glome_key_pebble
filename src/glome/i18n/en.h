@@ -3,6 +3,7 @@
 #include "common.h"
 
 default_i18n glome_i18n = {
+  .glome_me = "http://glome.me",
   .main_title = "Glome Key",
   .press_any_key = "Press any key",
 

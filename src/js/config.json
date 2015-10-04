@@ -1,0 +1,48 @@
+/**
+ *
+ * All the necessary configuration that is used in the phone app
+ *
+ */
+{
+  /**
+   * Glome API access configuration
+   * These could go to the pebble app "settings" page
+   */
+  'server': 'http://192.168.100.24:3000/',
+  'apikey': '85f3a11f14ffcd4f0e2091701a473792',
+  'uid': 'me.glome.p1',
+
+  /**
+   * PLEASE DO NOT CHANGE SETTINGS BELOW
+   *
+   * Glome API entry points; see https://api.glome.me/apidocs/
+   */
+  'api':
+  {
+    'createSoftAccount':
+    {
+      'uri': 'users.json',
+      'method': 'POST'
+    },
+    'createCode':
+    {
+      'uri': 'users/{glomeid}/sync.json',
+      'method': 'POST'
+    },
+  },
+  /**
+   * Commands sent to the watch app; see comm.h of the watchapp
+   */
+  'watchCommands':
+  {
+    'WATCH_LOAD_SOFTACCOUNT': 31,
+  },
+  /**
+   * Commands received from the watchapp; see comm.h of the watchapp
+   */
+  'apiCommands':
+  {
+    'API_CREATE_SOFTACCOUNT': 51,
+    'API_CREATE_CODE': 61,
+  },
+};

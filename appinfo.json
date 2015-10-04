@@ -12,9 +12,10 @@
     "watchface": false
   },
   "appKeys": {
-    "SA_KEY": 0,
-    "SYNC_CODE_KEY": 1,
-    "STATUS_KEY": 2
+    "STATUS_KEY": 0,
+    "SOFTACCOUNT_KEY": 1,
+    "CODE_KEY": 2,
+    "COMMAND_KEY": 3
   },
   "resources": {
     "media": [
