@@ -1,8 +1,8 @@
 #include <pebble.h>
+#include <qr-layer.h>
 #include "comm.h"
 #include "ui.h"
 #include "i18n/en.h"
-#include <qrlayer/qr-layer.h>
 
 static Window *s_window;
 static TextLayer *s_title;
@@ -33,6 +33,7 @@ void create_footer(const char *default_text)
 {
   s_footer = text_layer_create(GRect(0, 133, 144, 15));
   text_layer_set_text(s_footer, default_text);
+  text_layer_set_text_alignment(s_footer, GTextAlignmentCenter);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_footer);
 }
 // Updates text in the footer
@@ -51,7 +52,7 @@ void destroy_footer() {
  * QR UI element
  */
 void create_qr(char *default_text) {
-  s_qrlayer = qr_layer_create(GRect(0, 15, 144, 140));
+  s_qrlayer = qr_layer_create(GRect(12, 15, 120, 120));
   qr_layer_set_data(s_qrlayer, default_text);
   layer_add_child(window_get_root_layer(s_window), (Layer *)s_qrlayer);
 }

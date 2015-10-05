@@ -1,0 +1,3 @@
+[submodule "lib/qr-layer"]
+	path = lib/qr-layer
+	url = git@github.com:feri/qr-layer.git

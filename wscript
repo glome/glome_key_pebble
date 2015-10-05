@@ -68,13 +68,16 @@ def build_platform(ctx, platform=None, binaries=None):
     build_worker = os.path.exists('worker_src')
 
     app_elf='{}/pebble-app.elf'.format(ctx.env.BUILD_DIR)
-    ctx.pbl_program(source=ctx.path.ant_glob('src/**/*.c'),
+    ctx.pbl_program(source=ctx.path.ant_glob('src/**/*.c') +
+                    ctx.path.ant_glob('lib/qr-layer/lib/*.c'),
+                    includes=['lib/qr-layer/lib'],
                     target=app_elf)
 
     if build_worker:
         worker_elf='{}/pebble-worker.elf'.format(ctx.env.BUILD_DIR)
         binaries.append({'platform': platform, 'app_elf': app_elf, 'worker_elf': worker_elf})
-        ctx.pbl_worker(source=ctx.path.ant_glob('worker_src/**/*.c'),
+        ctx.pbl_worker(source=ctx.path.ant_glob('worker_src/**/*.c') +
+                       ctx.path.ant_glob('lib/qr-layer/lib/*.c'),
                        target=worker_elf)
     else:
         binaries.append({'platform': platform, 'app_elf': app_elf})
