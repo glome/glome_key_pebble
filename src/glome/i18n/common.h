@@ -5,6 +5,7 @@
  */
 typedef struct default_i18n {
   char *glome_me;
+  char *happy_guy;
   char *main_title;
   char *press_any_key;
   char *pressed_up;

@@ -4,42 +4,35 @@
 #include "ui.h"
 #include "i18n/en.h"
 
-static Window *s_window;
-static TextLayer *s_title;
-static TextLayer *s_footer;
-static QRLayer *s_qrlayer;
-static TextLayer *s_code_1; // the 1st part of the code
-static TextLayer *s_code_2; // the 2nd part of the code
-static TextLayer *s_code_3; // the 3rd part of the code
-static int current_page = 0; // QR code
+static Window *window;
+static TextLayer *title_layer;
+static TextLayer *footer_layer;
+static QRLayer *code_qr_layer; // QR code representation of the key code
+static TextLayer *code_txt_layer; // textual representation of the key code
+static Layer *code_wrapper_layer; // wraps the text layer
+static PropertyAnimation *code_wrapper_animation; // for sliding the textual code in / out
+static int current_page = 0; // 0: QR code shown; 1: text shown
 
-
-static PropertyAnimation *s_code_1_animation;
-static PropertyAnimation *s_code_2_animation;
-static PropertyAnimation *s_code_3_animation;
-GRect qr_orig_frame;
-GRect code_1_orig_frame;
-GRect code_2_orig_frame;
-GRect code_3_orig_frame;
-GRect code_1_anim_end_frame;
-GRect code_2_anim_end_frame;
-GRect code_3_anim_end_frame;
+GRect code_qr_orig_frame;
+GRect code_txt_orig_frame;
+GRect code_wrapper_orig_frame;
+GRect code_wrapper_anim_end_frame;
 
 /**
  * Header UI element aligned to center
  */
 void create_header(const char *default_text) {
-  s_title = text_layer_create(GRect(0, 0, 144, 15));
-  text_layer_set_text(s_title, default_text);
-  text_layer_set_text_alignment(s_title, GTextAlignmentCenter);
-  layer_add_child(window_get_root_layer(s_window), (Layer *)s_title);
+  title_layer = text_layer_create(GRect(0, 0, 144, 15));
+  text_layer_set_text(title_layer, default_text);
+  text_layer_set_text_alignment(title_layer, GTextAlignmentCenter);
+  layer_add_child(window_get_root_layer(window), (Layer *)title_layer);
 }
 // Updates text in the header
 void update_header(const char *text) {
-  text_layer_set_text(s_title, text);
+  text_layer_set_text(title_layer, text);
 }
 void destroy_header() {
-  text_layer_destroy(s_title);
+  text_layer_destroy(title_layer);
 }
 
 /**
@@ -47,79 +40,109 @@ void destroy_header() {
  */
 void create_footer(const char *default_text)
 {
-  s_footer = text_layer_create(GRect(0, 133, 144, 15));
-  text_layer_set_text(s_footer, default_text);
-  text_layer_set_text_alignment(s_footer, GTextAlignmentCenter);
-  layer_add_child(window_get_root_layer(s_window), (Layer *)s_footer);
+  footer_layer = text_layer_create(GRect(0, 133, 144, 15));
+  text_layer_set_text(footer_layer, default_text);
+  text_layer_set_text_alignment(footer_layer, GTextAlignmentCenter);
+  layer_add_child(window_get_root_layer(window), (Layer *)footer_layer);
 }
 // Updates text in the footer
 void update_footer(const char *text) {
-  if (text_layer_get_layer(s_footer)) {
-    text_layer_set_text(s_footer, text);
+  if (text_layer_get_layer(footer_layer)) {
+    text_layer_set_text(footer_layer, text);
   }
 }
 void destroy_footer() {
-  if (text_layer_get_layer(s_footer)) {
-    text_layer_destroy(s_footer);
+  if (text_layer_get_layer(footer_layer)) {
+    text_layer_destroy(footer_layer);
   }
 }
 
 /**
- * QR UI element
+ *
+ */
+static void code_wrapper_layer_update_proc(Layer* layer, GContext* ctx) {
+  GRect layer_size = layer_get_bounds(layer);
+  graphics_context_set_fill_color(ctx, DEFAULT_BG_COLOR);
+  graphics_fill_rect(ctx, layer_size, 0, GCornerNone);
+  graphics_context_set_fill_color(ctx, DEFAULT_FILL_COLOR);
+}
+
+/**
+ * QR representation of the key code
  */
 void create_qr(char *default_text) {
-  // add QR layer to the text layer
-  s_qrlayer = qr_layer_create(qr_orig_frame);
-  qr_layer_set_data(s_qrlayer, default_text);
-  layer_add_child(window_get_root_layer(s_window), (Layer *)s_qrlayer);
+  // add QR layer first
+  code_qr_layer = qr_layer_create(code_qr_orig_frame);
+  qr_layer_set_data(code_qr_layer, default_text);
+  layer_add_child(window_get_root_layer(window), (Layer *)code_qr_layer);
 
-  // add code bits to the QR layer
-  s_code_1 = text_layer_create(code_1_anim_end_frame);
-  s_code_2 = text_layer_create(code_2_anim_end_frame);
-  s_code_3 = text_layer_create(code_3_anim_end_frame);
+  // create a wrapper for the text layer (for animation)
+  code_wrapper_layer = layer_create(code_wrapper_anim_end_frame);
+  layer_set_update_proc(code_wrapper_layer, code_wrapper_layer_update_proc);
 
-  text_layer_set_font(s_code_1, fonts_get_system_font(FONT_KEY_GOTHIC_28));
-  text_layer_set_font(s_code_2, fonts_get_system_font(FONT_KEY_GOTHIC_28));
-  text_layer_set_font(s_code_3, fonts_get_system_font(FONT_KEY_GOTHIC_28));
+  // create a text layer for textual representation of the code
+  code_txt_layer = text_layer_create(code_txt_orig_frame);
 
-  text_layer_set_text(s_code_1, default_text);
-  text_layer_set_text(s_code_2, default_text);
-  text_layer_set_text(s_code_3, default_text);
+  text_layer_set_font(code_txt_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
+  text_layer_set_text(code_txt_layer, glome_i18n.happy_guy);
+  text_layer_set_text_alignment(code_txt_layer, GTextAlignmentCenter);
+  text_layer_set_overflow_mode(code_txt_layer, GTextOverflowModeWordWrap);
 
-  layer_add_child(s_qrlayer, (Layer *)s_code_1);
-  layer_add_child(s_qrlayer, (Layer *)s_code_2);
-  layer_add_child(s_qrlayer, (Layer *)s_code_3);
+  // add a text layer to the wrapper layer (this will be animated)
+  layer_add_child((Layer *) code_wrapper_layer, (Layer *) code_txt_layer);
+  // add a wrapper layer to the QR layer
+  layer_add_child((Layer *) code_qr_layer, (Layer *) code_wrapper_layer);
+
 }
 // Updates QR code
 void update_qr(char *text) {
-  if (s_qrlayer) {
-    QRData* qr_data = (QRData*) layer_get_data(s_qrlayer);
-    if (qr_data && qr_data->width > 0) {
-      text_layer_set_text(s_code_1, text);
-      text_layer_set_text(s_code_2, text);
-      text_layer_set_text(s_code_3, text);
-      qr_layer_set_data(s_qrlayer, text);
+  if (code_qr_layer) {
+    QRData* qr_data = (QRData*) layer_get_data(code_qr_layer);
+    if (qr_data && qr_data->width > 0 && strlen(text) == 12) {
+      qr_layer_set_data(code_qr_layer, text);
+      // split the text into 4 bytes chunks;
+      char code[3][5];
+      int i = 0; int j = 0; int k = 0; int res;
+      for (i = 1; i < 13; i++) {
+        code[j][k] = text[i-1];
+        k++;
+        if (i%4 == 0)
+        {
+          code[j][k] = '\0';
+          k = 0;
+          j = i / 4;
+        }
+      }
+      if (j == 3) {
+        // set the code txt layer
+        char *txt = "";
+        res = snprintf(txt, sizeof(code) + 2, "%s\n%s\n%s", code[0], code[1], code[2]);
+        if (res > 0) {
+          text_layer_set_text(code_txt_layer, txt);
+        }
+      }
     }
   }
 }
 void remove_qr() {
-  if (s_qrlayer) {
-    QRData* qr_data = (QRData*) layer_get_data(s_qrlayer);
+  if (code_qr_layer) {
+    QRData* qr_data = (QRData*) layer_get_data(code_qr_layer);
     if (qr_data && qr_data->width > 0) {
       APP_LOG(APP_LOG_LEVEL_DEBUG, "Remove QR layer");
-      layer_remove_from_parent(s_qrlayer);
+      layer_remove_from_parent(code_qr_layer);
     }
   }
 }
 
-void code_3_animation_started(Animation *animation, void *data) {
+void code_wrapper_animation_started(Animation *animation, void *data) {
 }
 
-void code_3_animation_stopped(Animation *animation, bool finished, void *data) {
+void code_wrapper_animation_stopped(Animation *animation, bool finished, void *data) {
   if (current_page == 0) {
     current_page = 1;
   } else {
     current_page = 0;
+    //layer_set_hidden((Layer *)s_code_textlayer, true);
   }
   APP_LOG(APP_LOG_LEVEL_DEBUG, "QR anim ended. Current page: %d", current_page);
 }
@@ -128,56 +151,46 @@ void code_3_animation_stopped(Animation *animation, bool finished, void *data) {
  *
  */
 static void switch_qr_or_text() {
-  // swap s_code and s_qrlayer
+  // swap s_code and code_qr_layer
   if (current_page == 0) {
     // scroll QR from its place to the left
-    s_code_1_animation = property_animation_create_layer_frame((Layer *) s_code_1, &code_1_anim_end_frame, &code_1_orig_frame);
-    s_code_2_animation = property_animation_create_layer_frame((Layer *) s_code_2, &code_2_anim_end_frame, &code_2_orig_frame);
-    s_code_3_animation = property_animation_create_layer_frame((Layer *) s_code_3, &code_3_anim_end_frame, &code_3_orig_frame);
+    code_wrapper_animation = property_animation_create_layer_frame((Layer *) code_wrapper_layer, &code_wrapper_anim_end_frame, &code_wrapper_orig_frame);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "QR is shown; switch to code");
   }
   if (current_page == 1) {
     // scroll QR from left to the main area
-    s_code_1_animation = property_animation_create_layer_frame((Layer *) s_code_1, &code_1_orig_frame, &code_1_anim_end_frame);
-    s_code_2_animation = property_animation_create_layer_frame((Layer *) s_code_2, &code_2_orig_frame, &code_2_anim_end_frame);
-    s_code_3_animation = property_animation_create_layer_frame((Layer *) s_code_3, &code_3_orig_frame, &code_3_anim_end_frame);
+    code_wrapper_animation = property_animation_create_layer_frame((Layer *) code_wrapper_layer, &code_wrapper_orig_frame, &code_wrapper_anim_end_frame);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Code is shown; switch to QR");
   }
 
   // register anim callbacks
-  animation_set_handlers((Animation*) s_code_3_animation, (AnimationHandlers) {
-    .started = (AnimationStartedHandler) code_3_animation_started,
-    .stopped = (AnimationStoppedHandler) code_3_animation_stopped,
+  animation_set_handlers((Animation*) code_wrapper_animation, (AnimationHandlers) {
+    .started = (AnimationStartedHandler) code_wrapper_animation_started,
+    .stopped = (AnimationStoppedHandler) code_wrapper_animation_stopped,
   }, NULL);
 
   // Schedule to occur ASAP with default settings
-  animation_schedule((Animation*) s_code_1_animation);
-  animation_schedule((Animation*) s_code_2_animation);
-  animation_schedule((Animation*) s_code_3_animation);
+  animation_schedule((Animation*) code_wrapper_animation);
 }
 
 /**
  *
  */
 static void initialise_ui(void) {
-  s_window = window_create();
+  window = window_create();
 
-  window_set_background_color(s_window, GColorClear);
+  window_set_background_color(window, GColorClear);
   #ifndef PBL_SDK_3
-    window_set_fullscreen(s_window, 0);
+    window_set_fullscreen(window, 0);
   #endif
 
   // basic UI parts
   create_header(glome_i18n.main_title);
 
-  qr_orig_frame = GRect(12, 15, 120, 120);
-  code_1_orig_frame = GRect(0, 0, 120, 40);
-  code_2_orig_frame = GRect(0, 40, 120, 40);
-  code_3_orig_frame = GRect(0, 80, 120, 40);
-  code_1_anim_end_frame = GRect(-145, 0, 120, 40);
-  code_2_anim_end_frame = GRect(-145, 40, 120, 40);
-  code_3_anim_end_frame = GRect(-145, 80, 120, 40);
-
+  code_qr_orig_frame = GRect(12, 15, 120, 120);
+  code_wrapper_orig_frame = GRect(0, 0, 120, 120); // relative to the qr frame
+  code_wrapper_anim_end_frame = GRect(0, 0, 0, 120);
+  code_txt_orig_frame = GRect(0, 10, 120, 110); // relative to the wrapper frame
   create_qr(glome_i18n.glome_me);
 
   create_footer(glome_i18n.press_any_key);
@@ -186,17 +199,17 @@ static void initialise_ui(void) {
   current_page = 0; // the QR layer
 
   // click handler
-  window_set_click_config_provider(s_window, click_config_provider);
+  window_set_click_config_provider(window, click_config_provider);
 }
 
 /**
  *
  */
 static void destroy_ui(void) {
-  window_destroy(s_window);
+  window_destroy(window);
   destroy_header();
   destroy_footer();
-  qr_layer_destroy(s_qrlayer);
+  qr_layer_destroy(code_qr_layer);
 }
 
 /**
@@ -211,17 +224,17 @@ static void handle_window_unload(Window* window) {
  */
 void show_glome_key_ui(void) {
   initialise_ui();
-  window_set_window_handlers(s_window, (WindowHandlers) {
+  window_set_window_handlers(window, (WindowHandlers) {
     .unload = handle_window_unload,
   });
-  window_stack_push(s_window, true);
+  window_stack_push(window, true);
 }
 
 /**
  *
  */
 void hide_glome_key_ui(void) {
-  window_stack_remove(s_window, true);
+  window_stack_remove(window, true);
 }
 
 static void up_single_click_handler(ClickRecognizerRef recognizer, void *context) {

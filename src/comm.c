@@ -2,6 +2,9 @@
 #include <comm.h>
 #include "glome/ui.h"
 
+//
+glome settings;
+
 /**
  * Send a soft account to the phone
  */

@@ -46,9 +46,6 @@ typedef struct glome {
   glomecode *code;
 } __attribute__((__packed__)) glome;
 
-//
-glome settings;
-
 // Watch -> Phone (PebbleJS)
 void send_softaccount(const char *softaccount);
 void send_status(uint8_t status);
