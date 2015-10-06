@@ -27,6 +27,11 @@
     'createCode':
     {
       'uri': 'users/{glomeid}/sync.json',
+      'data': {
+        'synchronization': {
+          'kind': 'k',
+        },
+      },
       'method': 'POST'
     },
   },
