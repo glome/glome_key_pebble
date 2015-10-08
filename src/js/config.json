@@ -5,14 +5,6 @@
  */
 {
   /**
-   * Glome API access configuration
-   * These could go to the pebble app "settings" page
-   */
-  'server': 'http://192.168.100.24:3000/',
-  'apikey': '85f3a11f14ffcd4f0e2091701a473792',
-  'uid': 'me.glome.p1',
-
-  /**
    * PLEASE DO NOT CHANGE SETTINGS BELOW
    *
    * Glome API entry points; see https://api.glome.me/apidocs/
@@ -41,6 +33,7 @@
   'watchCommands':
   {
     'WATCH_LOAD_SOFTACCOUNT': 31,
+    'WATCH_CHECK_API_ACCESS': 32,
   },
   /**
    * Commands received from the watchapp; see comm.h of the watchapp

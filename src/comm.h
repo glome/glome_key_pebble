@@ -13,6 +13,7 @@ enum {
 // see also js/config.json
 typedef enum {
   WATCH_LOAD_SOFTACCOUNT = 31,
+  WATCH_CHECK_API_ACCESS = 32
 } WatchCommand;
 
 // commands to phone from watch

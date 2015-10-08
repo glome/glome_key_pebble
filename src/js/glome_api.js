@@ -35,10 +35,49 @@ GlomeAPI.prototype.prepareApiUrl = function(uri)
     }
   }
 
-  ret = this.config.server.concat(ret)
+  // get the server address from storage
+  var apiSettings = {};
+  var fromStorage = localStorage.getItem("apiSettings");
+
+  try
+  {
+    apiSettings = JSON.parse(fromStorage);
+  }
+  catch(e)
+  {
+    // hard coded default
+    apiSettings = { server: 'https://api.glome.me/' };
+  }
+
+  // in any ways we will have a server prop of apiSettings
+  ret = apiSettings.server.concat('/' + ret)
 
   return ret;
 };
+
+/**
+ * Prepare API credentials from local storage
+ */
+GlomeAPI.prototype.prepareApiCredentials = function()
+{
+  var ret = {'application': {'apikey': '', 'uid': ''}};
+  var fromStorage = localStorage.getItem("apiSettings") || {apikey: '', uid: ''};
+
+  try
+  {
+    var apiSettings = JSON.parse(fromStorage);
+    ret.application.apikey = apiSettings.apikey;
+    ret.application.uid = apiSettings.uid;
+    console.log('Glome API credentials from storage: ' + JSON.stringify(ret));
+  }
+  catch(e)
+  {
+    console.log('There are no valid Glome API credentials.');
+    return false;
+  }
+
+  return ret;
+}
 
 /**
  *
@@ -52,43 +91,39 @@ GlomeAPI.prototype.init = function(config)
   return true;
 }
 
-
 /**
  * Prepare and send an API request;
  * API implementations should all use this method
  */
 GlomeAPI.prototype.request = function (options, success, failure)
 {
-  // prepend data payload with API credentials
-  var credentials = {
-    'application':
+  // API credentials
+  var credentials = this.prepareApiCredentials();
+
+  if (credentials)
+  {
+    var data = util2.copy(options.data, credentials);
+    var url = this.prepareApiUrl(options.uri);
+
+    console.log('send request to url: ' + url);
+
+    if (url == false)
     {
-      'apikey': this.config.apikey,
-      'uid': this.config.uid
+      return url;
     }
-  };
 
-  var data = util2.copy(options.data, credentials);
-  var url = this.prepareApiUrl(options.uri);
+    var opts =
+    {
+      url: url,
+      method: options.method,
+      data: data,
+      type: 'json',
+      headers: options.headers,
+      async: true
+    }
 
-  console.log('send request to url: ' + url);
-
-  if (url == false)
-  {
-    return url;
+    return ajax(opts, success, failure);
   }
-
-  var opts =
-  {
-    url: url,
-    method: options.method,
-    data: data,
-    type: 'json',
-    headers: options.headers,
-    async: true
-  }
-
-  return ajax(opts, success, failure);
 }
 
 /**

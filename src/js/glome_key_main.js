@@ -67,3 +67,83 @@ Pebble.addEventListener("appmessage",
       glomeApi.glomeId = e.payload.SOFTACCOUNT_KEY;
     }
 });
+
+/**
+ * load config page
+ */
+Pebble.addEventListener("showConfiguration", function(e)
+{
+  var apiSettings = {};
+  var fromStorage = localStorage.getItem("apiSettings") || {'server': 'https://api.glome.me', 'apikey': '', 'uid': ''};
+
+  try
+  {
+    apiSettings = JSON.parse(fromStorage);
+  }
+  catch(e)
+  {
+    console.log('Parsing local storage data failed: ' + util2.toString(e.message));
+    apiSettings = {'server':'https://api.glome.me', 'apikey': '', 'uid': ''};
+  }
+
+  console.log('fromStorage: ' + fromStorage);
+  console.log('apiSettings: ' + util2.toString(apiSettings));
+
+  var configPage = 'http://pebble.glome.me/config/glomekey?' +
+    'server=' + encodeURI(apiSettings.server) +
+    '&apikey=' + apiSettings.apikey +
+    '&uid=' + apiSettings.uid;
+
+  console.log('Load config page from: ' + configPage);
+
+  Pebble.openURL(configPage);
+});
+
+/**
+ * check and save api settings to local storage
+ */
+Pebble.addEventListener("webviewclosed", function(e)
+{
+  var apiSettings = {
+    server: 'https://api.glome.me',
+    apikey: '',
+    uid: ''
+  };
+
+  /**
+   * the reply should look like something like this:
+   * server=xxxx&apikey=xxxx&apiuid=xxxx
+   */
+  console.log('Raw response from settings page: ' + e.response);
+
+  var reply = e.response.split('&');
+
+  // check, sanitize, always :)
+  if (reply.length == 3)
+  {
+    if (reply[0].indexOf('=') !== -1)
+    {
+      apiSettings.server = reply[0].split('=')[1] || 'https://api.glome.me';
+    }
+    if (reply[1].indexOf('=') !== -1)
+    {
+      apiSettings.apikey = reply[1].split('=')[1];
+    }
+    if (reply[2].indexOf('=') !== -1)
+    {
+      apiSettings.uid = reply[2].split('=')[1];
+    }
+
+    console.log('Save parsed settings: ' + util2.toString(apiSettings));
+
+    // save to local storage
+    localStorage.setItem('apiSettings', util2.toString(apiSettings));
+
+    // send watch a command so that it can recheck the API
+    watch.send({'COMMAND_KEY': config.watchCommands.WATCH_CHECK_API_ACCESS});
+  }
+  else
+  {
+    console.log('Invalid settings received: ' + e.response);
+  }
+});
