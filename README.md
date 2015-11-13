@@ -44,11 +44,8 @@ Follow these steps to build the watch app:
   pebble build
 </pre>
 
-The watch app will be compiled for different Pebble releases. The built
-versions can be found at:
-
-  * build/basalt/pebble-app.bin
-  * build/aplite/pebble-app.bin
+The compiled watch app is located at:
+<pre>build/glome_key_pebble.pbw</pre>.
 
 ### Kudos
 
