@@ -45,7 +45,7 @@ Follow these steps to build the watch app:
 </pre>
 
 The compiled watch app is located at:
-<pre>build/glome_key_pebble.pbw</pre>.
+<pre>build/glome_key_pebble.pbw</pre>
 
 ### Kudos
 
