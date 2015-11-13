@@ -3,10 +3,6 @@
 This watch app lets anyone access web sites with a simple one-time key.
 There is __no__ need to sign up or register on the web site.
 
-### Screenshots
-
-..todo..
-
 ### Try it!
 
 Web sites working with Glome Key:
@@ -17,10 +13,8 @@ Want to add your site? Let us know: contact@glome.me
 
 ### Installation
 
-..todo..
-
-Grab [Glome Key for Pebble](todo) from the Pebble app store using the
-Pebble app on your smartphone.
+Grab [Glome Key](https://apps.getpebble.com/applications/56462fb8b6908423fa000074)
+from the app store using the Pebble app on your smartphone.
 
 ### Build on Linux
 
