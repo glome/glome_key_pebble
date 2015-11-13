@@ -1,5 +1,28 @@
 /** Glome Key CSS */
+body {
+  background-color: #323232;
+  color: white;
+  width: 300px;
+}
+
+img {
+  margin: 0 auto;
+}
+
+.details {
+  width: 300px;
+}
+
 .item {
   display: block;
   margin-bottom: 1em;
+  text-align: left;
+}
+
+.item div {
+  width: 30%;
+}
+
+.item input {
+  width: 99%;
 }
