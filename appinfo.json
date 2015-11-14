@@ -4,7 +4,7 @@
   "longName": "Glome Key for Pebble",
   "companyName": "Glome Oy",
   "versionCode": 1,
-  "versionLabel": "0.1",
+  "versionLabel": "0.2",
   "capabilities": [
     "configurable"
   ],
