@@ -73,8 +73,8 @@ Pebble.addEventListener("appmessage",
  */
 Pebble.addEventListener("showConfiguration", function(e)
 {
-  var apiSettings = {};
-  var fromStorage = localStorage.getItem("apiSettings") || {'server': 'https://api.glome.me', 'apikey': '', 'uid': ''};
+  var apiSettings = config.api.settings;
+  var fromStorage = localStorage.getItem("apiSettings") || apiSettings;
 
   try
   {
@@ -83,7 +83,6 @@ Pebble.addEventListener("showConfiguration", function(e)
   catch(e)
   {
     console.log('Parsing local storage data failed: ' + util2.toString(e.message));
-    apiSettings = {'server':'https://api.glome.me', 'apikey': '', 'uid': ''};
   }
 
   console.log('fromStorage: ' + fromStorage);
@@ -104,11 +103,8 @@ Pebble.addEventListener("showConfiguration", function(e)
  */
 Pebble.addEventListener("webviewclosed", function(e)
 {
-  var apiSettings = {
-    server: 'https://api.glome.me',
-    apikey: '',
-    uid: ''
-  };
+  var value = '';
+  var apiSettings = config.api.settings;
 
   /**
    * the reply should look like something like this:
@@ -123,15 +119,18 @@ Pebble.addEventListener("webviewclosed", function(e)
   {
     if (reply[0].indexOf('=') !== -1)
     {
-      apiSettings.server = reply[0].split('=')[1] || 'https://api.glome.me';
+      value = reply[0].split('=')[1];
+      if (value != '') apiSettings.server = value;
     }
     if (reply[1].indexOf('=') !== -1)
     {
-      apiSettings.apikey = reply[1].split('=')[1];
+      value = reply[1].split('=')[1];
+      if (value != '') apiSettings.apikey = value;
     }
     if (reply[2].indexOf('=') !== -1)
     {
-      apiSettings.uid = reply[2].split('=')[1];
+      value = reply[2].split('=')[1];
+      if (value != '') apiSettings.uid = value;
     }
 
     console.log('Save parsed settings: ' + util2.toString(apiSettings));

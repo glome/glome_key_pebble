@@ -35,8 +35,8 @@ GlomeAPI.prototype.prepareApiUrl = function(uri)
     }
   }
 
-  // get the server address from storage
-  var apiSettings = {};
+  var apiSettings = this.config.api.settings;
+  // get the server address from storage if available
   var fromStorage = localStorage.getItem("apiSettings");
 
   try
@@ -46,7 +46,9 @@ GlomeAPI.prototype.prepareApiUrl = function(uri)
   catch(e)
   {
     // hard coded default
-    apiSettings = { server: 'https://api.glome.me/' };
+    console.log('Use default API config');
+    console.log(apiSettings);
+    //apiSettings = { server: 'https://api.glome.me/' };
   }
 
   // in any ways we will have a server prop of apiSettings
@@ -61,7 +63,7 @@ GlomeAPI.prototype.prepareApiUrl = function(uri)
 GlomeAPI.prototype.prepareApiCredentials = function()
 {
   var ret = {'application': {'apikey': '', 'uid': ''}};
-  var fromStorage = localStorage.getItem("apiSettings") || {apikey: '', uid: ''};
+  var fromStorage = localStorage.getItem("apiSettings") || this.config.api.settings;//{apikey: '', uid: ''};
 
   try
   {

@@ -11,6 +11,12 @@
    */
   'api':
   {
+    'settings':
+    {
+      'server': 'https://api.glome.me',
+      'apikey': 'b329a85236121ea1ba3999fc86bb6727',
+      'uid': 'me.glome.p1'
+    },
     'createSoftAccount':
     {
       'uri': 'users.json',
