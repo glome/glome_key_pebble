@@ -1,3 +1,6 @@
 [submodule "lib/qr-layer"]
 	path = lib/qr-layer
 	url = git@github.com:feri/qr-layer.git
+[submodule "docs"]
+	path = docs
+	url = https://github.com/glome/glome_key_pebble.wiki.git
